@@ -2,7 +2,7 @@
 
 A hierarchical multi-agent system for cosmetics research, featuring intelligent query orchestration, RAG-based retrieval, and evidence-based answer generation.
 
-## 🏗️ Architecture
+## Architecture
 
 This system implements a **two-level hierarchical architecture** with a Planner Agent coordinating specialized worker agents:
 
@@ -25,27 +25,27 @@ This system implements a **two-level hierarchical architecture** with a Planner 
 (Carlos)      (Carlos)       (Franklyn)     (Franklyn)
 ```
 
-## 👥 Team Assignments
+## Team Assignments
 
-- **You**: Planner Agent (orchestration & coordination)
-- **Carlos**: RAG System + Summarization Agent
-- **Franklyn**: Validation Agent + Reflective Agent
+- **Planner Agent**: Orchestration & coordination
+- **RAG System + Summarization Agent**: Carlos
+- **Validation Agent + Reflective Agent**: Franklyn
 
-## 🎯 Features
+## Features
 
-### Planner Agent (Your Work) ✅
+### Planner Agent
 - **Intelligent Query Decomposition**: Analyzes queries and creates optimal execution plans
 - **Task Orchestration**: Delegates work to specialized agents
 - **Result Aggregation**: Merges outputs into structured, comprehensive responses
 - **Evidence Tracking**: Maintains citations and source references
 
-### Worker Agents (Team Integration Points)
-1. **RAG System** (Carlos): Document retrieval using vector embeddings ✅
-2. **Summarization Agent** (Carlos): Condenses retrieved context into concise answers ✅
-3. **Validation Agent** (Franklyn): Checks accuracy and detects hallucinations 🔜
-4. **Reflective Agent** (Franklyn): Performs self-critique and suggests improvements 🔜
+### Worker Agents
+1. **RAG System** (Carlos): Document retrieval using vector embeddings
+2. **Summarization Agent** (Carlos): Condenses retrieved context into concise answers
+3. **Validation Agent** (Franklyn): Checks accuracy and detects hallucinations
+4. **Reflective Agent** (Franklyn): Performs self-critique and suggests improvements
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -87,7 +87,7 @@ result = planner.coordinate(query)
 print(planner.format_output(result))
 ```
 
-**Note**: Validation and Reflection agents will be added by Franklyn.
+
 
 ### Run Examples
 
@@ -96,7 +96,7 @@ print(planner.format_output(result))
 python agent_usage_sample.py
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Cosmetics-AI-Agent/
@@ -118,14 +118,12 @@ Cosmetics-AI-Agent/
 │   ├── __init__.py
 │   └── sum_agent.py         # Text summarization
 │
-└── planner_agent/           # Planner Agent (Your Work)
+└── planner_agent/           # Planner Agent
     ├── __init__.py
     └── planner.py          # Orchestration logic
-
-Note: validation_agent/ will be added by Franklyn
 ```
 
-## 🔄 System Workflow
+## System Workflow
 
 The Planner Agent orchestrates the following workflow:
 
@@ -145,11 +143,11 @@ User Query
    - Condense retrieved context
    - Generate concise answer
     ↓
-4. Validation (Franklyn - Coming Soon)
+4. Validation (Franklyn)
    - Check accuracy against sources
    - Detect hallucinations
     ↓
-5. Reflection (Franklyn - Coming Soon)
+5. Reflection (Franklyn)
    - Self-critique answer quality
     ↓
 6. Result Aggregation (Planner)
@@ -159,7 +157,7 @@ User Query
 Structured JSON Response
 ```
 
-## 📊 Output Format
+## Output Format
 
 The system returns structured responses:
 
@@ -173,7 +171,7 @@ The system returns structured responses:
         ...
     ],
     "validation": {
-        "is_valid": True,  # Will be functional when Franklyn adds validator
+        "is_valid": True,
         "confidence": 1.0,
         "issues": []
     },
@@ -183,7 +181,7 @@ The system returns structured responses:
 }
 ```
 
-## 🎛️ Configuration
+## Configuration
 
 ### Planner Setup
 
@@ -197,12 +195,12 @@ planner = PlannerAgent(
 
 The Planner automatically determines optimal retrieval parameters through query decomposition.
 
-## 📚 Documentation
+## Documentation
 
 - **Usage Examples**: See `agent_usage_sample.py`
 - **Design Specifications**: See `Design PART a.docx` and `COMP 248_Project_ Assignment.docx`
 
-## 🔑 Key Design Principles
+## Key Design Principles
 
 1. **Evidence-Based**: All answers grounded in retrieved sources
 2. **Two-Level Hierarchy**: Clear separation between coordination and execution
@@ -210,7 +208,7 @@ The Planner automatically determines optimal retrieval parameters through query 
 4. **Transparency**: Confidence scores and source citations provided
 5. **Iterative Refinement**: Reflection enables quality improvement
 
-## 🛠️ Technologies
+## Technologies
 
 - **LLM Provider**: Groq (Llama 3.1 models)
 - **Vector Store**: FAISS
@@ -218,7 +216,7 @@ The Planner automatically determines optimal retrieval parameters through query 
 - **PDF Processing**: PyPDF2
 - **Framework**: Python 3.8+
 
-## 📝 Requirements
+## Requirements
 
 See `requirements.txt` for full dependencies. Key packages:
 - `groq>=0.37.1`
@@ -227,15 +225,15 @@ See `requirements.txt` for full dependencies. Key packages:
 - `PyPDF2>=3.0.1`
 - `python-dotenv>=1.2.1`
 
-## 🚧 Integration Status
+## Integration Status
 
-- ✅ **Planner Agent**: Complete (Your work)
-- ✅ **RAG System**: Complete (Carlos)
-- ✅ **Summarization Agent**: Complete (Carlos)
-- 🔜 **Validation Agent**: Pending (Franklyn)
-- 🔜 **Reflective Agent**: Pending (Franklyn)
+- **Planner Agent**: Complete
+- **RAG System**: Complete (Carlos)
+- **Summarization Agent**: Complete (Carlos)
+- **Validation Agent**: Pending (Franklyn)
+- **Reflective Agent**: Pending (Franklyn)
 
-## 📄 License
+## License
 
 See LICENSE file for details.
 

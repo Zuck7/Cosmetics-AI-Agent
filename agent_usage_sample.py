@@ -39,7 +39,6 @@ planner = PlannerAgent(
     summarizer=summarizer
 )
 print("✓ Planner agent ready")
-print("\nNote: Validation and Reflection agents will be integrated by team members.")
 
 print("\n" + "=" * 60)
 print("System initialization complete!")
