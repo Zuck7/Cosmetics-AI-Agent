@@ -27,7 +27,7 @@ This system implements a **two-level hierarchical architecture** with a Planner 
 
 ## Team Assignments
 
-- **Planner Agent**: Orchestration & coordination
+- **Planner Agent**: Orchestration & coordination (Zuhriddin)
 - **RAG System + Summarization Agent**: Carlos
 - **Validation Agent + Reflective Agent**: Franklyn
 
