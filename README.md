@@ -54,7 +54,7 @@ This system implements a **two-level hierarchical architecture** with a Planner 
 pip install -r requirements.txt
 
 # Set up environment variables
-echo "GROQ_API_KEY=your_api_key_here" > .env
+echo "GROQ_API_KEY=your_groq_key_here" > .env
 ```
 
 ### Basic Usage
@@ -210,7 +210,7 @@ The Planner automatically determines optimal retrieval parameters through query 
 
 ## Technologies
 
-- **LLM Provider**: Groq (Llama 3.1 models)
+- **LLM Provider**: Groq (Llama 3.1 70B for Planner, Llama 3.1 8B for Summarization)
 - **Vector Store**: FAISS
 - **Embeddings**: Sentence Transformers
 - **PDF Processing**: PyPDF2

@@ -15,7 +15,7 @@ class PlannerAgent:
     - Aggregating results into structured responses
     """
     
-    def __init__(self, rag_system, summarizer, model_name="llama-3.1-70b-versatile"):
+    def __init__(self, rag_system, summarizer, model_name="llama-3.3-70b-versatile"):
         """
         Initialize the Planner Agent with worker agents.
         
