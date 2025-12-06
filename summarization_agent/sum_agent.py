@@ -42,12 +42,37 @@ class SummarizationAgent:
             )
             return response.choices[0].message.content
         else:
-            # Fallback: simple extractive summarization
-            sentences = text.split('. ')
-            words_per_sentence = max_len // len(sentences) if sentences else max_len
-            summary = '. '.join(
-                s for s in sentences[:max(2, len(sentences) // 2)]
-            )
-            if not summary.endswith('.'):
-                summary += '.'
-            return summary[:max_len]
+            # Fallback: extract sentences most relevant to the question
+            import re
+            # Try to split into question and context
+            if text.lower().startswith("question:") and "context:" in text:
+                parts = text.split("Context:", 1)
+                query = parts[0].replace("Question:", "").strip()
+                context = parts[1].strip()
+            else:
+                query = ""
+                context = text
+            sentences = re.split(r'(?<=[.!?])\s+', context)
+            query_words = set(query.lower().split())
+            # Score sentences by overlap with query words
+            scored = []
+            for s in sentences:
+                score = sum(1 for w in query_words if w in s.lower())
+                if score > 0:
+                    scored.append((score, s))
+            # Sort by score, take top sentences up to max_len words
+            summary = []
+            word_count = 0
+            for _, s in sorted(scored, reverse=True):
+                if word_count + len(s.split()) > max_len:
+                    break
+                summary.append(s)
+                word_count += len(s.split())
+            # Fallback: if nothing matched, take first sentences
+            if not summary:
+                for s in sentences:
+                    if word_count + len(s.split()) > max_len:
+                        break
+                    summary.append(s)
+                    word_count += len(s.split())
+            return ' '.join(summary)

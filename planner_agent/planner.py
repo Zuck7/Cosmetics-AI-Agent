@@ -37,7 +37,7 @@ class PlannerAgent:
     - Aggregating results into structured responses
     """
     
-    def __init__(self, rag_system, summarizer, model_name="llama-3.3-70b-versatile"):
+    def __init__(self, rag_system, summarizer, model_name="llama-3.3-70b-versatile", groq_api_key=None):
         """
         Initialize the Planner Agent with worker agents.
         
@@ -45,16 +45,16 @@ class PlannerAgent:
             rag_system: RAGSystem instance for document retrieval
             summarizer: SummarizationAgent instance for text condensation
             model_name: LLM model for planning and orchestration
+            groq_api_key: Optional Groq API key to use for all Groq calls
         
         Note: Validator and Reflector agents will be integrated by team members later.
         """
         load_dotenv()
-        
         self.model_name = model_name
         self.client = None
-        
+        # Centralize Groq API key loading
+        api_key = groq_api_key or os.getenv("GROQ_API_KEY")
         if Groq is not None:
-            api_key = os.getenv("GROQ_API_KEY")
             if api_key:
                 self.client = Groq(api_key=api_key)
             else:
