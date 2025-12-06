@@ -1,0 +1,10 @@
+[logger]
+level = "warning"
+
+[client]
+showErrorDetails = true
+
+[server]
+# Disable watching torch module to avoid import errors
+fileWatcherType = "poll"
+maxUploadSize = 200
