@@ -57,8 +57,48 @@ class VectorStore:
         self._use_faiss = _HAVE_FAISS
 
     def chunk_text(self, text, chunk_size=300):
-        words = text.split()
-        return [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
+        """
+        Split text into meaningful chunks by sentences, not just word count.
+        This preserves semantic meaning and avoids splitting mid-thought.
+        """
+        # Split by common sentence endings
+        import re
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        
+        chunks = []
+        current_chunk = []
+        current_length = 0
+        
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+                
+            # Count words in this sentence
+            words = len(sentence.split())
+            
+            # If adding this sentence exceeds chunk_size, save current chunk and start new one
+            if current_length + words > chunk_size and current_chunk:
+                chunks.append(' '.join(current_chunk))
+                current_chunk = [sentence]
+                current_length = words
+            else:
+                current_chunk.append(sentence)
+                current_length += words
+        
+        # Don't forget the last chunk
+        if current_chunk:
+            chunks.append(' '.join(current_chunk))
+        
+        # Filter out very short chunks (less than 20 words) that might be headers
+        chunks = [c for c in chunks if len(c.split()) >= 20]
+        
+        # If all chunks were filtered, fall back to original simple chunking
+        if not chunks:
+            words = text.split()
+            chunks = [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
+        
+        return chunks
 
     def build(self, documents):
         all_chunks = []

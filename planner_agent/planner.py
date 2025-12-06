@@ -189,19 +189,27 @@ Respond in JSON format:
         print(f"[PLANNER] Executing retrieval (k={k})...")
         return self.rag_system.query(query, k=k)
     
-    def execute_summarization(self, text: str, max_len: int = 200) -> str:
+    def execute_summarization(self, text: str, query: str = "", max_len: int = 200) -> str:
         """
         Execute summarization task.
         
         Args:
             text: Text to summarize
+            query: User query for context-aware summarization
             max_len: Maximum summary length in words
             
         Returns:
             Summarized text
         """
         print(f"[PLANNER] Executing summarization (max_len={max_len})...")
-        return self.summarizer.summarize(text, max_len=max_len)
+        # Pass query to summarizer if supported, otherwise concatenate
+        if hasattr(self.summarizer, "summarize"):
+            try:
+                return self.summarizer.summarize(f"Question: {query}\nContext: {text}", max_len=max_len)
+            except Exception:
+                return self.summarizer.summarize(text, max_len=max_len)
+        else:
+            return text[:max_len*5]  # fallback: truncate
     
     def execute_validation(self, summary: str, sources: List[str], query: str) -> Dict[str, Any]:
         """
@@ -317,7 +325,7 @@ Respond in JSON format:
             max_len = None
             if max_summary_len is not None:
                 max_len = max_summary_len
-            summary = self.execute_summarization(rag_output["context"], max_len=max_len or 200)
+            summary = self.execute_summarization(rag_output["context"], user_query, max_len=max_len or 200)
         else:
             # If no summarization needed, use raw context or generate direct answer
             if rag_output["context"]:
@@ -362,10 +370,15 @@ Respond in JSON format:
         print("[PLANNER] Generating direct answer...")
         
         if self.client is None:
-            # Demo mode: simple extraction of first sentence/paragraph from context
-            lines = context.split('\n')
-            relevant = [l for l in lines if any(w in l.lower() for w in query.lower().split())][:2]
-            return '\n'.join(relevant) if relevant else context[:300]
+            # Demo mode: extract sentences most related to the query
+            import re
+            sentences = re.split(r'(?<=[.!?])\s+', context)
+            query_words = set(query.lower().split())
+            relevant = [s for s in sentences if any(w in s.lower() for w in query_words)]
+            if relevant:
+                return ' '.join(relevant[:3])
+            # fallback: first 2 sentences
+            return ' '.join(sentences[:2]) if sentences else context[:300]
 
         prompt = f"""Based on the following context, answer the user's question directly and concisely.
 
