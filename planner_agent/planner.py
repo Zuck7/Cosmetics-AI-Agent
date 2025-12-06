@@ -1,8 +1,30 @@
-from groq import Groq
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except Exception:
+    # Provide a no-op if python-dotenv is not installed
+    def load_dotenv(*args, **kwargs):
+        return None
+
+# Import Groq lazily where available; some environments may not have the package installed
+try:
+    from groq import Groq
+except Exception:
+    Groq = None
 import os
 import json
 from typing import Dict, Any, List, Optional
+
+# Optional adapters for validation and reflection
+try:
+    from validation_agent.validation_agent import validate_summary, ValidationReport
+except Exception:
+    validate_summary = None
+    ValidationReport = None
+
+try:
+    from reflective_agent.reflective_agent import reflect_on_run
+except Exception:
+    reflect_on_run = None
 
 
 class PlannerAgent:
@@ -28,19 +50,67 @@ class PlannerAgent:
         """
         load_dotenv()
         
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            raise ValueError("GROQ_API_KEY not found in environment variables")
-        
-        self.client = Groq(api_key=api_key)
         self.model_name = model_name
+        self.client = None
+        
+        if Groq is not None:
+            api_key = os.getenv("GROQ_API_KEY")
+            if api_key:
+                self.client = Groq(api_key=api_key)
+            else:
+                print("⚠️  GROQ_API_KEY not found. PlannerAgent will use demo mode.")
+        else:
+            print("⚠️  groq package not installed. PlannerAgent will use demo mode.")
         
         # Worker agents
         self.rag_system = rag_system
         self.summarizer = summarizer
         # Validator and Reflector will be added by team members
-        self.validator = None
-        self.reflector = None
+        # If validation and reflection modules are available, create small adapters
+        if validate_summary and ValidationReport:
+            class _ValidatorAdapter:
+                def validate(self, summary: str, sources: List[str], query: str) -> Dict[str, Any]:
+                    # validate_summary returns a ValidationReport dataclass
+                    report = validate_summary(query=query, summary=summary, retrieved_chunks=sources)
+                    issues = []
+                    for rc in report.rule_checks:
+                        if not rc.get("passed", False):
+                            issues.append(f"Rule failed: {rc.get('rule')} - {rc.get('comment')}")
+
+                    return {
+                        "is_valid": bool(report.overall_passed),
+                        "confidence": float(report.relevance_score),
+                        "issues": issues,
+                        "_report": report,
+                    }
+
+            self.validator = _ValidatorAdapter()
+        else:
+            self.validator = None
+
+        if reflect_on_run and ValidationReport:
+            class _ReflectorAdapter:
+                def reflect(self, answer: str, query: str, validation_result: Dict[str, Any]) -> Dict[str, Any]:
+                    # The reflector expects a ValidationReport. Try to extract it.
+                    report = None
+                    if isinstance(validation_result, dict) and "_report" in validation_result:
+                        report = validation_result["_report"]
+                    # If no ValidationReport available, create a minimal one if possible
+                    if report is None and ValidationReport is not None:
+                        try:
+                            report = ValidationReport(query=query, summary=answer, retrieved_chunks=validation_result.get("retrieved_chunks", []), relevance_score=validation_result.get("confidence", 0.0), word_count=len(answer.split()), overall_passed=validation_result.get("is_valid", True), rule_checks=[])
+                        except Exception:
+                            report = None
+
+                    if report is None:
+                        # Fallback: call reflector with None-safe input
+                        return reflect_on_run(validation_result) if callable(reflect_on_run) else {"needs_improvement": False, "suggestions": []}
+
+                    return reflect_on_run(report)
+
+            self.reflector = _ReflectorAdapter()
+        else:
+            self.reflector = None
         
     def decompose_query(self, user_query: str) -> Dict[str, Any]:
         """
@@ -52,6 +122,17 @@ class PlannerAgent:
         Returns:
             Dictionary containing task decomposition plan
         """
+        if self.client is None:
+            # Demo mode: return default plan
+            return {
+                "needs_retrieval": True,
+                "retrieval_k": 4,
+                "needs_summarization": True,
+                "needs_validation": False,
+                "complexity": "moderate",
+                "query_intent": "Query about cosmetics"
+            }
+        
         prompt = f"""You are a planner agent for a cosmetics research system. Analyze this query and create an execution plan.
 
 User Query: "{user_query}"
@@ -73,15 +154,26 @@ Respond in JSON format:
     "query_intent": "brief description of what user wants"
 }}"""
 
-        response = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-            response_format={"type": "json_object"}
-        )
-        
-        plan = json.loads(response.choices[0].message.content)
-        return plan
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                response_format={"type": "json_object"}
+            )
+            
+            plan = json.loads(response.choices[0].message.content)
+            return plan
+        except Exception as e:
+            print(f"⚠️  Query decomposition failed: {e}. Using default plan.")
+            return {
+                "needs_retrieval": True,
+                "retrieval_k": 4,
+                "needs_summarization": True,
+                "needs_validation": False,
+                "complexity": "moderate",
+                "query_intent": "Query about cosmetics"
+            }
     
     def execute_retrieval(self, query: str, k: int = 4) -> Dict[str, Any]:
         """
@@ -186,7 +278,7 @@ Respond in JSON format:
         
         return final_response
     
-    def coordinate(self, user_query: str, auto_validate: bool = False, auto_reflect: bool = False) -> Dict[str, Any]:
+    def coordinate(self, user_query: str, auto_validate: bool = False, auto_reflect: bool = False, retrieval_k: Optional[int] = None, max_summary_len: Optional[int] = None) -> Dict[str, Any]:
         """
         Main coordination method that orchestrates the entire workflow.
         
@@ -212,6 +304,8 @@ Respond in JSON format:
         rag_output = None
         if plan.get("needs_retrieval", True):
             k = plan.get("retrieval_k", 4)
+            if retrieval_k is not None:
+                k = retrieval_k
             rag_output = self.execute_retrieval(user_query, k=k)
         else:
             print("[PLANNER] Skipping retrieval (not needed)...")
@@ -220,7 +314,10 @@ Respond in JSON format:
         # Step 3: Execute summarization
         summary = ""
         if plan.get("needs_summarization", True) and rag_output["context"]:
-            summary = self.execute_summarization(rag_output["context"])
+            max_len = None
+            if max_summary_len is not None:
+                max_len = max_summary_len
+            summary = self.execute_summarization(rag_output["context"], max_len=max_len or 200)
         else:
             # If no summarization needed, use raw context or generate direct answer
             if rag_output["context"]:
@@ -264,6 +361,12 @@ Respond in JSON format:
         """
         print("[PLANNER] Generating direct answer...")
         
+        if self.client is None:
+            # Demo mode: simple extraction of first sentence/paragraph from context
+            lines = context.split('\n')
+            relevant = [l for l in lines if any(w in l.lower() for w in query.lower().split())][:2]
+            return '\n'.join(relevant) if relevant else context[:300]
+
         prompt = f"""Based on the following context, answer the user's question directly and concisely.
 
 Context:
@@ -273,13 +376,19 @@ Question: {query}
 
 Provide a clear, evidence-based answer:"""
 
-        response = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2
-        )
-        
-        return response.choices[0].message.content
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.2
+            )
+            
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"⚠️  Direct answer generation failed: {e}. Using context excerpt.")
+            lines = context.split('\n')
+            relevant = [l for l in lines if any(w in l.lower() for w in query.lower().split())][:2]
+            return '\n'.join(relevant) if relevant else context[:300]
     
     def format_output(self, response: Dict[str, Any]) -> str:
         """
