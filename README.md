@@ -13,6 +13,7 @@ This system implements a **two-level hierarchical architecture** with a Planner 
 │   • Task delegation                 │
 │   • Result aggregation              │
 └──────────┬──────────────────────────┘
+       (Zuhriddin)
            │
     ┌──────┴────────┬─────────────┬──────────────┐
     ▼               ▼             ▼              ▼
