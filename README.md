@@ -228,10 +228,10 @@ See `requirements.txt` for full dependencies. Key packages:
 ## Integration Status
 
 - **Planner Agent**: Complete
-- **RAG System**: Complete (Carlos)
-- **Summarization Agent**: Complete (Carlos)
-- **Validation Agent**: Pending (Franklyn)
-- **Reflective Agent**: Pending (Franklyn)
+- **RAG System**: Complete
+- **Summarization Agent**: Complete
+- **Validation Agent**: Pending
+- **Reflective Agent**: Pending
 
 ## License
 
