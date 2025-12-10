@@ -28,7 +28,7 @@ This system implements a **two-level hierarchical architecture** with a Planner 
 
 ## Team Assignments
 
-- **Planner Agent**: Orchestration & coordination (Zuhriddin)
+- **Planner Agent**: Orchestration & coordination Zuhriddin
 - **RAG System + Summarization Agent**: Carlos
 - **Validation Agent + Reflective Agent**: Franklyn
 
@@ -41,10 +41,10 @@ This system implements a **two-level hierarchical architecture** with a Planner 
 - **Evidence Tracking**: Maintains citations and source references
 
 ### Worker Agents
-1. **RAG System** (Carlos): Document retrieval using vector embeddings
-2. **Summarization Agent** (Carlos): Condenses retrieved context into concise answers
-3. **Validation Agent** (Franklyn): Checks accuracy and detects hallucinations
-4. **Reflective Agent** (Franklyn): Performs self-critique and suggests improvements
+1. **RAG System** : Document retrieval using vector embeddings
+2. **Summarization Agent** : Condenses retrieved context into concise answers
+3. **Validation Agent** : Checks accuracy and detects hallucinations
+4. **Reflective Agent** : Performs self-critique and suggests improvements
 
 ## Quick Start
 
@@ -53,9 +53,6 @@ This system implements a **two-level hierarchical architecture** with a Planner 
 ```bash
 # Install dependencies
 pip install -r requirements.txt
-
-# Set up environment variables
-echo "GROQ_API_KEY=your_groq_key_here" > .env
 ```
 
 ### Basic Usage
@@ -136,19 +133,19 @@ User Query
    - Determine execution plan
    - Set retrieval parameters
     ↓
-2. Document Retrieval (RAG - Carlos)
+2. Document Retrieval (RAG)
    - Semantic search in knowledge base
    - Retrieve top-k relevant chunks
     ↓
-3. Summarization (Carlos)
+3. Summarization
    - Condense retrieved context
    - Generate concise answer
     ↓
-4. Validation (Franklyn)
+4. Validation
    - Check accuracy against sources
    - Detect hallucinations
     ↓
-5. Reflection (Franklyn)
+5. Reflection
    - Self-critique answer quality
     ↓
 6. Result Aggregation (Planner)
@@ -199,7 +196,7 @@ The Planner automatically determines optimal retrieval parameters through query 
 ## Documentation
 
 - **Usage Examples**: See `agent_usage_sample.py`
-- **Design Specifications**: See `Design PART a.docx` and `COMP 248_Project_ Assignment.docx`
+- **Design Specifications**: See `Design PART a.docx`
 
 ## Key Design Principles
 
@@ -225,14 +222,6 @@ See `requirements.txt` for full dependencies. Key packages:
 - `faiss-cpu>=1.13.1`
 - `PyPDF2>=3.0.1`
 - `python-dotenv>=1.2.1`
-
-## Integration Status
-
-- **Planner Agent**: Complete
-- **RAG System**: Complete
-- **Summarization Agent**: Complete
-- **Validation Agent**: Pending
-- **Reflective Agent**: Pending
 
 ## License
 
