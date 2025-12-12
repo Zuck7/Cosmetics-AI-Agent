@@ -49,8 +49,26 @@ def load_pdfs(folder_path):
 
 def _get_mock_cosmetics_data():
     return [
-        {"file": "mock_cosmetics_ingredients.txt", "text": "Retinol: ... Hyaluronic Acid: ... Vitamin C: ... Peptides: ... Niacinamide: ..."},
-        {"file": "mock_cosmetics_formulations.txt", "text": "Foundation: ... Serums: ... Face Masks: ... Moisturizers: ..."},
+        {"file": "mock_cosmetics_ingredients.txt", "text": """
+Retinol is a form of vitamin A that is commonly used in skincare products. It works by increasing cell turnover and stimulating collagen production, which helps reduce the appearance of fine lines, wrinkles, and acne scars. Retinol is considered one of the most effective anti-aging ingredients available. It can also help improve skin texture and tone, reduce hyperpigmentation, and unclog pores. However, retinol can cause irritation, especially when first starting to use it, so it's important to start with a low concentration and gradually increase usage.
+
+Hyaluronic Acid is a naturally occurring substance in the human body that can hold up to 1000 times its weight in water. In skincare, hyaluronic acid is prized for its incredible hydrating properties. It acts as a humectant, drawing moisture from the environment into the skin and helping to maintain hydration levels. This ingredient is suitable for all skin types, including oily and acne-prone skin, as it provides hydration without clogging pores. Hyaluronic acid helps plump the skin, reducing the appearance of fine lines and giving skin a more youthful, dewy appearance.
+
+Vitamin C is a powerful antioxidant that offers multiple benefits for the skin. It helps protect against environmental damage from UV rays and pollution, brightens the complexion, and can help reduce dark spots and hyperpigmentation. Vitamin C also stimulates collagen production, which helps maintain skin firmness and elasticity. It's often used in serums and can help achieve a more radiant, even-toned complexion. However, vitamin C can be unstable and may cause irritation in some people, especially those with sensitive skin.
+
+Niacinamide, also known as vitamin B3, is a versatile ingredient that offers multiple benefits for the skin. It helps regulate oil production, making it excellent for those with oily or acne-prone skin. Niacinamide also helps strengthen the skin barrier, improve skin texture, and reduce the appearance of enlarged pores. Additionally, it can help reduce inflammation and redness, making it suitable for sensitive skin types. This ingredient also has brightening properties and can help reduce the appearance of dark spots and uneven skin tone.
+
+Peptides are short chains of amino acids that serve as building blocks for proteins like collagen and elastin in the skin. In skincare, peptides can help signal the skin to produce more collagen, which can improve skin firmness and reduce the appearance of fine lines and wrinkles. Different types of peptides offer various benefits, including improved skin barrier function, enhanced healing, and better overall skin texture. Peptides are generally well-tolerated by most skin types and are often found in anti-aging serums and moisturizers.
+        """},
+        {"file": "mock_cosmetics_formulations.txt", "text": """
+Foundation is a base makeup product designed to even out skin tone and create a smooth canvas for other makeup products. Modern foundations come in various formulations including liquid, powder, cream, and stick forms. Liquid foundations are the most popular and can range from light coverage for a natural look to full coverage for special occasions. When choosing a foundation, it's important to match your skin tone and consider your skin type - oily skin may benefit from oil-free or matte formulations, while dry skin may need hydrating or dewy finishes.
+
+Serums are concentrated skincare treatments that contain high levels of active ingredients. They are typically thinner in consistency than moisturizers and are designed to penetrate deeper into the skin. Serums can target specific skin concerns such as aging, hyperpigmentation, hydration, or acne. Popular serum ingredients include vitamin C for brightening, retinol for anti-aging, hyaluronic acid for hydration, and niacinamide for oil control. Serums are usually applied after cleansing but before moisturizing, and a little goes a long way.
+
+Face Masks are intensive skincare treatments that can provide targeted benefits for specific skin concerns. Clay masks are excellent for oily and acne-prone skin as they help absorb excess oil and unclog pores. Sheet masks are convenient and often contain hydrating or brightening ingredients. Overnight masks provide extended treatment while you sleep. Exfoliating masks help remove dead skin cells and improve skin texture. Most face masks should be used 1-3 times per week, depending on the type and your skin's needs.
+
+Moisturizers are essential skincare products that help maintain the skin's hydration and strengthen the skin barrier. They come in various formulations to suit different skin types - gel moisturizers for oily skin, cream moisturizers for dry skin, and lotion moisturizers for normal to combination skin. Good moisturizers contain ingredients like ceramides, hyaluronic acid, and glycerin to help lock in moisture. Some moisturizers also include additional beneficial ingredients like SPF for sun protection or anti-aging compounds like retinol or peptides.
+        """},
     ]
 
 # --- Vector Store ---
@@ -74,13 +92,59 @@ def _cosine_similarity(a, b):
     return np.dot(a_normalized, b_normalized.T)
 
 def _get_simple_embedding(text):
-    import hashlib
-    seed = int(hashlib.md5(text.encode()).hexdigest(), 16)
-    np.random.seed(seed % 2**31)
-    embedding = np.random.randn(384).astype(np.float32)
+    """Simple word-based embedding that captures basic semantic similarity."""
+    # Create a simple vocabulary-based embedding
+    # This is much better than random embeddings for demo purposes
+    words = text.lower().split()
+
+    # Define some cosmetics-related word categories with weights
+    skincare_words = {
+        'retinol': 1.0, 'vitamin': 0.8, 'acid': 0.7, 'skin': 0.6, 'aging': 0.9,
+        'hyaluronic': 1.0, 'hydration': 0.8, 'moisture': 0.7, 'water': 0.5,
+        'peptides': 1.0, 'collagen': 0.9, 'elastin': 0.8, 'amino': 0.7,
+        'niacinamide': 1.0, 'oil': 0.6, 'pores': 0.7, 'inflammation': 0.8,
+        'serum': 0.8, 'moisturizer': 0.8, 'cleanser': 0.7, 'treatment': 0.6,
+        'foundation': 1.0, 'makeup': 0.8, 'coverage': 0.7, 'tone': 0.6,
+        'mask': 0.8, 'clay': 0.7, 'exfoliating': 0.8, 'sheet': 0.6,
+        'wrinkles': 0.9, 'lines': 0.8, 'texture': 0.7, 'brightening': 0.8,
+        'antioxidant': 0.9, 'protection': 0.7, 'barrier': 0.8, 'sensitive': 0.6
+    }
+
+    # Create embedding vector (384 dimensions to match typical sentence transformers)
+    embedding = np.zeros(384, dtype=np.float32)
+
+    # Fill embedding based on word presence and importance
+    for i, word in enumerate(words[:384]):  # Use first 384 words max
+        # Base position encoding
+        embedding[i % 384] += 0.1
+
+        # Add semantic weights for recognized words
+        if word in skincare_words:
+            # Distribute the word's importance across multiple dimensions
+            weight = skincare_words[word]
+            for j in range(min(10, 384 - i)):  # Spread across 10 dimensions
+                if i + j < 384:
+                    embedding[i + j] += weight * 0.1
+
+    # Add some word-specific features
+    for word in words:
+        if word in skincare_words:
+            # Use hash to determine which dimensions to activate
+            import hashlib
+            word_hash = int(hashlib.md5(word.encode()).hexdigest(), 16)
+            for k in range(5):  # Activate 5 dimensions per word
+                dim = (word_hash + k) % 384
+                embedding[dim] += skincare_words[word] * 0.2
+
+    # Normalize
     norm = np.linalg.norm(embedding)
     if norm > 0:
         embedding = embedding / norm
+    else:
+        # If all zeros, create minimal random embedding
+        embedding = np.random.randn(384).astype(np.float32) * 0.01
+        embedding = embedding / np.linalg.norm(embedding)
+
     return embedding
 
 class VectorStore:
@@ -98,28 +162,52 @@ class VectorStore:
         self._use_faiss = _HAVE_FAISS
     def chunk_text(self, text, chunk_size=300):
         import re
-        sentences = re.split(r'(?<=[.!?])\s+', text)
+
+        # First, try to split by paragraphs (double newlines) for better semantic chunks
+        paragraphs = re.split(r'\n\s*\n', text.strip())
+
         chunks = []
-        current_chunk = []
-        current_length = 0
-        for sentence in sentences:
-            sentence = sentence.strip()
-            if not sentence:
+        for paragraph in paragraphs:
+            paragraph = paragraph.strip()
+            if not paragraph:
                 continue
-            words = len(sentence.split())
-            if current_length + words > chunk_size and current_chunk:
-                chunks.append(' '.join(current_chunk))
-                current_chunk = [sentence]
-                current_length = words
-            else:
-                current_chunk.append(sentence)
-                current_length += words
-        if current_chunk:
-            chunks.append(' '.join(current_chunk))
-        chunks = [c for c in chunks if len(c.split()) >= 20]
+
+            # If paragraph is small enough, use it as a single chunk
+            if len(paragraph.split()) <= chunk_size:
+                if len(paragraph.split()) >= 20:  # Only include substantial chunks
+                    chunks.append(paragraph)
+                continue
+
+            # If paragraph is too large, split by sentences
+            sentences = re.split(r'(?<=[.!?])\s+', paragraph)
+            current_chunk = []
+            current_length = 0
+
+            for sentence in sentences:
+                sentence = sentence.strip()
+                if not sentence:
+                    continue
+
+                words = len(sentence.split())
+                if current_length + words > chunk_size and current_chunk:
+                    chunks.append(' '.join(current_chunk))
+                    current_chunk = [sentence]
+                    current_length = words
+                else:
+                    current_chunk.append(sentence)
+                    current_length += words
+
+            if current_chunk:
+                chunk_text = ' '.join(current_chunk)
+                if len(chunk_text.split()) >= 20:  # Only include substantial chunks
+                    chunks.append(chunk_text)
+
+        # If no chunks were created, fall back to simple word-based chunking
         if not chunks:
             words = text.split()
             chunks = [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
+            chunks = [c for c in chunks if len(c.split()) >= 20]
+
         return chunks
     def build(self, documents):
         all_chunks = []
@@ -180,16 +268,64 @@ class RAGSystem:
 # --- Summarization Agent ---
 class SummarizationAgent:
     def summarize(self, text, max_len=200):
-        # Fallback: extract first N sentences up to max_len words
+        # Enhanced fallback: extract sentences most relevant to the question
         import re
-        sentences = re.split(r'(?<=[.!?])\s+', text)
+
+        # Try to split into question and context
+        if text.lower().startswith("question:") and "context:" in text.lower():
+            parts = text.split("Context:", 1) if "Context:" in text else text.split("context:", 1)
+            if len(parts) == 2:
+                question_part = parts[0].replace("Question:", "").replace("question:", "").strip()
+                context_part = parts[1].strip()
+            else:
+                question_part = ""
+                context_part = text
+        else:
+            question_part = ""
+            context_part = text
+
+        sentences = re.split(r'(?<=[.!?])\s+', context_part)
+
+        if question_part:
+            # Score sentences by overlap with query words
+            query_words = set(question_part.lower().split())
+            scored = []
+            for s in sentences:
+                s = s.strip()
+                if not s:
+                    continue
+                # Score based on word overlap and sentence length
+                s_words = set(s.lower().split())
+                overlap = len(query_words.intersection(s_words))
+                # Prefer sentences with good overlap and reasonable length
+                score = overlap * 10 + min(len(s.split()), 20)  # Bonus for reasonable length
+                if overlap > 0:
+                    scored.append((score, s))
+
+            # Sort by score, take top sentences up to max_len words
+            summary = []
+            word_count = 0
+            for _, s in sorted(scored, reverse=True):
+                if word_count + len(s.split()) > max_len:
+                    break
+                summary.append(s)
+                word_count += len(s.split())
+
+            if summary:
+                return ' '.join(summary)
+
+        # Fallback: if no question or no good matches, take first sentences
         summary = []
         word_count = 0
         for s in sentences:
+            s = s.strip()
+            if not s:
+                continue
             if word_count + len(s.split()) > max_len:
                 break
             summary.append(s)
             word_count += len(s.split())
+
         return ' '.join(summary)
 
 # --- Validation Agent (optional stub) ---

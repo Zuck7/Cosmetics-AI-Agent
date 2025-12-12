@@ -5,7 +5,7 @@ except Exception:
     def load_dotenv(*args, **kwargs):
         return None
 
-# Import Groq lazily where available; some environments may not have the package installed
+# Import Groq lazily where available
 try:
     from groq import Groq
 except Exception:
@@ -47,7 +47,6 @@ class PlannerAgent:
             model_name: LLM model for planning and orchestration
             groq_api_key: Optional Groq API key to use for all Groq calls
         
-        Note: Validator and Reflector agents will be integrated by team members later.
         """
         load_dotenv()
         self.model_name = model_name

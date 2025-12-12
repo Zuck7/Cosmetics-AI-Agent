@@ -25,19 +25,59 @@ def _cosine_similarity(a, b):
 
 
 def _get_simple_embedding(text):
-    """Lightweight fallback: deterministic embedding using word hash."""
-    import hashlib
+    """Simple word-based embedding that captures basic semantic similarity."""
+    # Create a simple vocabulary-based embedding
+    # This is much better than random embeddings for demo purposes
     words = text.lower().split()
-    # Use text hash as seed for reproducibility
-    seed = int(hashlib.md5(text.encode()).hexdigest(), 16)
-    np.random.seed(seed % 2**31)
-    embedding = np.random.randn(384).astype(np.float32)
-    
+
+    # Define some cosmetics-related word categories with weights
+    skincare_words = {
+        'retinol': 1.0, 'vitamin': 0.8, 'acid': 0.7, 'skin': 0.6, 'aging': 0.9,
+        'hyaluronic': 1.0, 'hydration': 0.8, 'moisture': 0.7, 'water': 0.5,
+        'peptides': 1.0, 'collagen': 0.9, 'elastin': 0.8, 'amino': 0.7,
+        'niacinamide': 1.0, 'oil': 0.6, 'pores': 0.7, 'inflammation': 0.8,
+        'serum': 0.8, 'moisturizer': 0.8, 'cleanser': 0.7, 'treatment': 0.6,
+        'foundation': 1.0, 'makeup': 0.8, 'coverage': 0.7, 'tone': 0.6,
+        'mask': 0.8, 'clay': 0.7, 'exfoliating': 0.8, 'sheet': 0.6,
+        'wrinkles': 0.9, 'lines': 0.8, 'texture': 0.7, 'brightening': 0.8,
+        'antioxidant': 0.9, 'protection': 0.7, 'barrier': 0.8, 'sensitive': 0.6
+    }
+
+    # Create embedding vector (384 dimensions to match typical sentence transformers)
+    embedding = np.zeros(384, dtype=np.float32)
+
+    # Fill embedding based on word presence and importance
+    for i, word in enumerate(words[:384]):  # Use first 384 words max
+        # Base position encoding
+        embedding[i % 384] += 0.1
+
+        # Add semantic weights for recognized words
+        if word in skincare_words:
+            # Distribute the word's importance across multiple dimensions
+            weight = skincare_words[word]
+            for j in range(min(10, 384 - i)):  # Spread across 10 dimensions
+                if i + j < 384:
+                    embedding[i + j] += weight * 0.1
+
+    # Add some word-specific features
+    for word in words:
+        if word in skincare_words:
+            # Use hash to determine which dimensions to activate
+            import hashlib
+            word_hash = int(hashlib.md5(word.encode()).hexdigest(), 16)
+            for k in range(5):  # Activate 5 dimensions per word
+                dim = (word_hash + k) % 384
+                embedding[dim] += skincare_words[word] * 0.2
+
     # Normalize
     norm = np.linalg.norm(embedding)
     if norm > 0:
         embedding = embedding / norm
-    
+    else:
+        # If all zeros, create minimal random embedding
+        embedding = np.random.randn(384).astype(np.float32) * 0.01
+        embedding = embedding / np.linalg.norm(embedding)
+
     return embedding
 
 
