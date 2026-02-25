@@ -150,7 +150,7 @@ class VectorStore:
         self.text_chunks = all_chunks
 
         if not all_chunks:
-            print("⚠️  No text chunks to build index from.")
+            print("No text chunks to build index from.")
             return
 
         embeddings = self._embed_fn(all_chunks)
@@ -165,7 +165,7 @@ class VectorStore:
             self.index = index
         else:
             # Fallback: store embeddings for cosine similarity search
-            print("⚠️  FAISS not installed. Using cosine similarity search (slower).")
+            print("FAISS not installed. Using cosine similarity search (slower).")
             self.embeddings = embeddings
 
     def search(self, query, k=5):

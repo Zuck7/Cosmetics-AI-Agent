@@ -57,9 +57,9 @@ class PlannerAgent:
             if api_key:
                 self.client = Groq(api_key=api_key)
             else:
-                print("⚠️  GROQ_API_KEY not found. PlannerAgent will use demo mode.")
+                print("GROQ_API_KEY not found. PlannerAgent will use demo mode.")
         else:
-            print("⚠️  groq package not installed. PlannerAgent will use demo mode.")
+            print("Groq package not installed. PlannerAgent will use demo mode.")
         
         # Worker agents
         self.rag_system = rag_system
@@ -397,7 +397,7 @@ Provide a clear, evidence-based answer:"""
             
             return response.choices[0].message.content
         except Exception as e:
-            print(f"⚠️  Direct answer generation failed: {e}. Using context excerpt.")
+            print(f"Direct answer generation failed: {e}. Using context excerpt.")
             lines = context.split('\n')
             relevant = [l for l in lines if any(w in l.lower() for w in query.lower().split())][:2]
             return '\n'.join(relevant) if relevant else context[:300]
@@ -422,18 +422,18 @@ Provide a clear, evidence-based answer:"""
         output.append("")
         
         if response['validation']['issues']:
-            output.append("⚠️  VALIDATION ISSUES:")
+            output.append("VALIDATION ISSUES:")
             for issue in response['validation']['issues']:
                 output.append(f"  - {issue}")
             output.append("")
         
         if response.get('improvement_suggestions'):
-            output.append("💡 IMPROVEMENT SUGGESTIONS:")
+            output.append("IMPROVEMENT SUGGESTIONS:")
             for suggestion in response['improvement_suggestions']:
                 output.append(f"  - {suggestion}")
             output.append("")
         
-        output.append(f"\n📊 METADATA:")
+        output.append(f"\n METADATA:")
         output.append(f"  - Retrieved chunks: {response['metadata']['retrieved_chunks']}")
         output.append(f"  - Validation confidence: {response['validation']['confidence']:.2f}")
         output.append(f"  - Status: {'Valid' if response['validation']['is_valid'] else 'Needs Review'}")

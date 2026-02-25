@@ -5,7 +5,7 @@ def load_pdfs(folder_path):
     try:
         import PyPDF2
     except ImportError:
-        print("⚠️  PyPDF2 not installed. Using mock cosmetics data for demo.")
+        print("PyPDF2 not installed. Using mock cosmetics data for demo.")
         return _get_mock_cosmetics_data()
 
     folder = Path(folder_path)
@@ -15,7 +15,7 @@ def load_pdfs(folder_path):
     pdf_files = list(folder.glob("*.pdf"))
     
     if not pdf_files:
-        print(f"⚠️  No PDFs found in {folder_path}. Using mock cosmetics data for demo.")
+        print(f"No PDFs found in {folder_path}. Using mock cosmetics data for demo.")
         return _get_mock_cosmetics_data()
 
     for pdf_path in pdf_files:
@@ -27,10 +27,10 @@ def load_pdfs(folder_path):
                     text += page.extract_text() + "\n"
             documents.append({"file": pdf_path.name, "text": text})
         except Exception as e:
-            print(f"⚠️  Error reading {pdf_path.name}: {e}. Skipping.")
+            print(f"Error reading {pdf_path.name}: {e}. Skipping.")
 
     if not documents:
-        print(f"⚠️  Could not load any PDFs. Using mock cosmetics data for demo.")
+        print(f"Could not load any PDFs. Using mock cosmetics data for demo.")
         return _get_mock_cosmetics_data()
 
     return documents

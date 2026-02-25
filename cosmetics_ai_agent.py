@@ -24,13 +24,13 @@ def load_pdfs(folder_path):
     try:
         import PyPDF2
     except ImportError:
-        print("⚠️  PyPDF2 not installed. Using mock cosmetics data for demo.")
+        print("PyPDF2 not installed. Using mock cosmetics data for demo.")
         return _get_mock_cosmetics_data()
     folder = Path(folder_path)
     documents = []
     pdf_files = list(folder.glob("*.pdf"))
     if not pdf_files:
-        print(f"⚠️  No PDFs found in {folder_path}. Using mock cosmetics data for demo.")
+        print(f"No PDFs found in {folder_path}. Using mock cosmetics data for demo.")
         return _get_mock_cosmetics_data()
     for pdf_path in pdf_files:
         text = ""
@@ -41,9 +41,9 @@ def load_pdfs(folder_path):
                     text += page.extract_text() + "\n"
             documents.append({"file": pdf_path.name, "text": text})
         except Exception as e:
-            print(f"⚠️  Error reading {pdf_path.name}: {e}. Skipping.")
+            print(f"Error reading {pdf_path.name}: {e}. Skipping.")
     if not documents:
-        print(f"⚠️  Could not load any PDFs. Using mock cosmetics data for demo.")
+        print(f"Could not load any PDFs. Using mock cosmetics data for demo.")
         return _get_mock_cosmetics_data()
     return documents
 
@@ -153,7 +153,7 @@ class VectorStore:
             self.model = SentenceTransformer(embed_model)
             self._embed_fn = lambda x: self.model.encode(x)
         else:
-            print("⚠️  sentence-transformers not installed. Using lightweight embedding fallback.")
+            print("sentence-transformers not installed. Using lightweight embedding fallback.")
             self.model = None
             self._embed_fn = lambda texts: np.array([_get_simple_embedding(t) for t in (texts if isinstance(texts, list) else [texts])]).astype(np.float32)
         self.index = None
@@ -217,7 +217,7 @@ class VectorStore:
                 all_chunks.append(c)
         self.text_chunks = all_chunks
         if not all_chunks:
-            print("⚠️  No text chunks to build index from.")
+            print("No text chunks to build index from.")
             return
         embeddings = self._embed_fn(all_chunks)
         if embeddings.ndim == 1:
@@ -229,7 +229,7 @@ class VectorStore:
             index.add(embeddings)
             self.index = index
         else:
-            print("⚠️  FAISS not installed. Using cosine similarity search (slower).")
+            print("FAISS not installed. Using cosine similarity search (slower).")
             self.embeddings = embeddings
     def search(self, query, k=5):
         if not self.text_chunks:

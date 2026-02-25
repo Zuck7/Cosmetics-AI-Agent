@@ -27,9 +27,9 @@ class SummarizationAgent:
             if api_key:
                 self.client = Groq(api_key=api_key)
             else:
-                print("⚠️  GROQ_API_KEY not found. Using simple demo summarization.")
+                print("GROQ_API_KEY not found. Using simple demo summarization.")
         else:
-            print("⚠️  groq package not installed. Using simple demo summarization.")
+            print("Groq package not installed. Using simple demo summarization.")
 
     def summarize(self, text, max_len=200):
         # If Groq is available and configured, use it
