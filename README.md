@@ -68,8 +68,6 @@ result = planner.coordinate(query)
 print(planner.format_output(result))
 ```
 
-
-
 ### Run Examples
 
 ```bash
