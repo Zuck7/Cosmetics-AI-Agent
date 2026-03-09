@@ -39,7 +39,7 @@ def reflect_on_run(report: ValidationReport) -> Dict[str, Any]:
     else:
         feedback["planner_agent"] = "Planning appears adequate for this query."
 
-    # --- RAG system feedback (Carlos) ---
+    # --- RAG system feedback ---
     if report.retrieved_chunks and report.relevance_score < 0.5:
         feedback["rag_system"] = (
             "RAG retrieval did not strongly align with the final summary. Consider improving "
@@ -54,7 +54,7 @@ def reflect_on_run(report: ValidationReport) -> Dict[str, Any]:
     else:
         feedback["rag_system"] = "RAG retrieval seems reasonably aligned with the summary."
 
-    # --- Summarization agent feedback (Carlos) ---
+    # --- Summarization agent feedback ---
     if report.word_count == 0:
         feedback["summarization_agent"] = (
             "Summarization agent produced an empty summary. Investigate prompt or model failure."
