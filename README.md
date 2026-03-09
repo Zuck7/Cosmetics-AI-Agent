@@ -13,7 +13,6 @@ This system implements a **two-level hierarchical architecture** with a Planner 
 │   • Task delegation                 │
 │   • Result aggregation              │
 └──────────┬──────────────────────────┘
-       (Zuhriddin)
            │
     ┌──────┴────────┬─────────────┬──────────────┐
     ▼               ▼             ▼              ▼
@@ -22,16 +21,7 @@ This system implements a **two-level hierarchical architecture** with a Planner 
 │ System │   │  Agent     │  │  Agent   │  │  Agent   │
 └────────┘   └────────────┘  └──────────┘  └──────────┘
    Level 2 Worker Agents
-   
-(Carlos)      (Carlos)       (Franklyn)     (Franklyn)
 ```
-
-## Team Assignments
-
-- **Planner Agent**: Orchestration & coordination Zuhriddin
-- **RAG System + Summarization Agent**: Carlos
-- **Validation Agent + Reflective Agent**: Franklyn
-
 ## Features
 
 ### Planner Agent
