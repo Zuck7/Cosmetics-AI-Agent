@@ -84,7 +84,7 @@ def reflect_on_run(report: ValidationReport) -> Dict[str, Any]:
             "Update rules.txt or summarization prompts based on these failures."
         )
 
-    # --- Suggested next steps for the team ---
+    # --- Suggested next steps for system evaluation ---
     if not actions:
         actions.append("Run additional test queries to stress-test the system.")
     actions.append("Document this reflection in the report as part of system evaluation.")

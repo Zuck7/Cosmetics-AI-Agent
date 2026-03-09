@@ -57,25 +57,18 @@ pip install -r requirements.txt
 
 ### Basic Usage
 
-```python
-from planner_agent.planner import PlannerAgent
-from rag.pdf_loader import load_pdfs
-from rag.vector_store import VectorStore
-from rag.rag_system import RAGSystem
-from summarization_agent.sum_agent import SummarizationAgent
-
-# Initialize system
-docs = load_pdfs("data/cosmetics")
-store = VectorStore()
-store.build(docs)
+    ┌──────┴────────┬─────────────┬──────────────┐
+    ▼               ▼             ▼              ▼
+┌────────┐   ┌────────────┐  ┌──────────┐  ┌──────────┐
+|  RAG   |   |Summarize   |  |Validate  |  |Reflective│
+| System |   |  Agent     |  |  Agent   |  |  Agent   |
+└────────┘   └────────────┘  └──────────┘  └──────────┘
+   Level 2 Worker Agents
 
 rag = RAGSystem(store)
 summarizer = SummarizationAgent()
 
 planner = PlannerAgent(
-    rag_system=rag,
-    summarizer=summarizer
-)
 
 # Query the system
 query = "What ingredients are commonly used for anti aging skin care?"
@@ -106,13 +99,13 @@ Cosmetics-AI-Agent/
 │   └── cosmetics/            # PDF knowledge base
 │       └── paper_beaty_pred.pdf
 │
-├── rag/                      # RAG System (Carlos)
+├── rag/                      # RAG System
 │   ├── __init__.py
 │   ├── pdf_loader.py        # PDF document loading
 │   ├── vector_store.py      # FAISS vector storage
 │   └── rag_system.py        # Retrieval logic
 │
-├── summarization_agent/      # Summarization Agent (Carlos)
+├── summarization_agent/      # Summarization Agent
 │   ├── __init__.py
 │   └── sum_agent.py         # Text summarization
 │

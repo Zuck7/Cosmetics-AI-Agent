@@ -64,7 +64,7 @@ class PlannerAgent:
         # Worker agents
         self.rag_system = rag_system
         self.summarizer = summarizer
-        # Validator and Reflector will be added by team members
+        # Validator and Reflector agent integration
         # If validation and reflection modules are available, create small adapters
         if validate_summary and ValidationReport:
             class _ValidatorAdapter:
@@ -297,7 +297,7 @@ Respond in JSON format:
         Returns:
             Final structured response
         
-        Note: Validation and reflection features will be enabled once team members integrate their agents.
+        Note: Validation and reflection features will be enabled once agent integration is complete.
         """
         print(f"\n{'='*60}")
         print(f"[PLANNER] Starting coordination for query: {user_query}")
