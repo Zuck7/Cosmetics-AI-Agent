@@ -1,18 +1,6 @@
-try:
-    from dotenv import load_dotenv
-except Exception:
-    # Provide a no-op if python-dotenv is not installed
-    def load_dotenv(*args, **kwargs):
-        return None
-
-# Import Groq lazily where available
-try:
-    from groq import Groq
-except Exception:
-    Groq = None
-import os
 import json
 from typing import Dict, Any, List, Optional
+from groq_config import get_groq_client, get_groq_api_key
 
 # Optional adapters for validation and reflection
 try:
@@ -45,21 +33,20 @@ class PlannerAgent:
             rag_system: RAGSystem instance for document retrieval
             summarizer: SummarizationAgent instance for text condensation
             model_name: LLM model for planning and orchestration
-            groq_api_key: Optional Groq API key to use for all Groq calls
+            groq_api_key: Deprecated. GROQ_API_KEY from .env is used globally.
         
         """
-        load_dotenv()
         self.model_name = model_name
-        self.client = None
-        # Centralize Groq API key loading
-        api_key = groq_api_key or os.getenv("GROQ_API_KEY")
-        if Groq is not None:
-            if api_key:
-                self.client = Groq(api_key=api_key)
-            else:
+        # Keep parameter for backward compatibility, but enforce one project key source.
+        if groq_api_key is not None:
+            print("PlannerAgent ignores custom groq_api_key and uses GROQ_API_KEY from .env.")
+
+        self.client = get_groq_client()
+        if self.client is None:
+            if get_groq_api_key() is None:
                 print("GROQ_API_KEY not found. PlannerAgent will use demo mode.")
-        else:
-            print("Groq package not installed. PlannerAgent will use demo mode.")
+            else:
+                print("Groq client unavailable. PlannerAgent will use demo mode.")
         
         # Worker agents
         self.rag_system = rag_system
@@ -206,7 +193,11 @@ Respond in JSON format:
             try:
                 return self.summarizer.summarize(f"Question: {query}\nContext: {text}", max_len=max_len)
             except Exception:
-                return self.summarizer.summarize(text, max_len=max_len)
+                try:
+                    return self.summarizer.summarize(text, max_len=max_len)
+                except Exception as e:
+                    print(f"[PLANNER] Summarization failed ({e}). Using direct-answer fallback.")
+                    return self._generate_direct_answer(query, text)
         else:
             return text[:max_len*5]  # fallback: truncate
     

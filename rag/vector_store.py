@@ -94,6 +94,7 @@ class VectorStore:
         self.index = None
         self.embeddings = None
         self.text_chunks = []
+        self.chunk_sources = []
         self._use_faiss = _HAVE_FAISS
 
     def chunk_text(self, text, chunk_size=300):
@@ -130,8 +131,8 @@ class VectorStore:
         if current_chunk:
             chunks.append(' '.join(current_chunk))
         
-        # Filter out very short chunks (less than 20 words) that might be headers
-        chunks = [c for c in chunks if len(c.split()) >= 20]
+        # Filter out very short chunks (less than 10 words) that might be headers
+        chunks = [c for c in chunks if len(c.split()) >= 10]
         
         # If all chunks were filtered, fall back to original simple chunking
         if not chunks:
@@ -142,12 +143,15 @@ class VectorStore:
 
     def build(self, documents):
         all_chunks = []
+        all_sources = []
         for doc in documents:
             chunks = self.chunk_text(doc["text"])
             for c in chunks:
                 all_chunks.append(c)
+                all_sources.append(doc.get("file", "unknown"))
 
         self.text_chunks = all_chunks
+        self.chunk_sources = all_sources
 
         if not all_chunks:
             print("No text chunks to build index from.")
@@ -168,23 +172,80 @@ class VectorStore:
             print("FAISS not installed. Using cosine similarity search (slower).")
             self.embeddings = embeddings
 
-    def search(self, query, k=5):
+    def _rank_indices(self, query, top_n):
         if not self.text_chunks:
             return []
 
         query_emb = self._embed_fn([query]).astype(np.float32)
         if query_emb.ndim == 1:
             query_emb = query_emb.reshape(1, -1)
-        
+
         if self._use_faiss and self.index is not None:
-            # Use FAISS for fast search
-            distances, idxs = self.index.search(query_emb, min(k, len(self.text_chunks)))
-            return [self.text_chunks[i] for i in idxs[0] if i < len(self.text_chunks)]
+            _, idxs = self.index.search(query_emb, min(top_n, len(self.text_chunks)))
+            return [i for i in idxs[0] if i < len(self.text_chunks)]
+
+        if self.embeddings is None:
+            return []
+
+        similarities = _cosine_similarity(query_emb, self.embeddings)[0]
+        top_idxs = np.argsort(-similarities)[:min(top_n, len(self.text_chunks))]
+        return list(top_idxs)
+
+    def search(self, query, k=5, return_metadata=False, diversify_sources=True, per_source_cap=2):
+        if not self.text_chunks:
+            return []
+
+        ranked_indices = self._rank_indices(query, top_n=max(k * 10, 50))
+        if not ranked_indices:
+            return []
+
+        if not diversify_sources or not self.chunk_sources:
+            selected = ranked_indices[:k]
         else:
-            # Fallback: cosine similarity search
-            if self.embeddings is None:
-                return []
-            
-            similarities = _cosine_similarity(query_emb, self.embeddings)[0]
-            top_idxs = np.argsort(-similarities)[:min(k, len(self.text_chunks))]
-            return [self.text_chunks[i] for i in top_idxs]
+            selected = []
+            selected_set = set()
+            source_counts = {}
+
+            # Pass 1: try to include at least one chunk from each source.
+            for idx in ranked_indices:
+                source = self.chunk_sources[idx]
+                if source_counts.get(source, 0) == 0:
+                    selected.append(idx)
+                    selected_set.add(idx)
+                    source_counts[source] = 1
+                    if len(selected) >= k:
+                        break
+
+            # Pass 2: fill remaining slots while capping per-source chunks.
+            if len(selected) < k:
+                for idx in ranked_indices:
+                    if idx in selected_set:
+                        continue
+                    source = self.chunk_sources[idx]
+                    if source_counts.get(source, 0) < per_source_cap:
+                        selected.append(idx)
+                        selected_set.add(idx)
+                        source_counts[source] = source_counts.get(source, 0) + 1
+                        if len(selected) >= k:
+                            break
+
+            # Pass 3: if still short, allow any source.
+            if len(selected) < k:
+                for idx in ranked_indices:
+                    if idx in selected_set:
+                        continue
+                    selected.append(idx)
+                    selected_set.add(idx)
+                    if len(selected) >= k:
+                        break
+
+        if return_metadata:
+            return [
+                {
+                    "text": self.text_chunks[i],
+                    "source": self.chunk_sources[i] if i < len(self.chunk_sources) else "unknown",
+                }
+                for i in selected
+            ]
+
+        return [self.text_chunks[i] for i in selected]

@@ -1,4 +1,125 @@
 from pathlib import Path
+import os
+import re
+import importlib
+
+
+def _normalize_text(text):
+    if not text:
+        return ""
+    # Keep line breaks but collapse noisy spacing from PDF extraction.
+    text = text.replace("\x00", " ")
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def _extract_with_pypdf2(pdf_path, password=None):
+    import PyPDF2
+
+    extracted = []
+    with open(pdf_path, "rb") as f:
+        reader = PyPDF2.PdfReader(f, strict=False)
+
+        if reader.is_encrypted:
+            # Try a provided password first, then blank password for owner-locked PDFs.
+            if password:
+                try:
+                    reader.decrypt(password)
+                except Exception:
+                    pass
+            if reader.is_encrypted:
+                try:
+                    reader.decrypt("")
+                except Exception:
+                    pass
+            if reader.is_encrypted:
+                raise ValueError("File is encrypted and could not be decrypted")
+
+        for page in reader.pages:
+            extracted.append(page.extract_text() or "")
+
+    return _normalize_text("\n".join(extracted))
+
+
+def _extract_with_pypdf(pdf_path, password=None):
+    try:
+        pypdf = importlib.import_module("pypdf")
+        PdfReader = pypdf.PdfReader
+    except Exception:
+        return ""
+
+    extracted = []
+    with open(pdf_path, "rb") as f:
+        reader = PdfReader(f, strict=False)
+
+        if reader.is_encrypted:
+            if password:
+                try:
+                    reader.decrypt(password)
+                except Exception:
+                    pass
+            if reader.is_encrypted:
+                try:
+                    reader.decrypt("")
+                except Exception:
+                    pass
+            if reader.is_encrypted:
+                return ""
+
+        for page in reader.pages:
+            extracted.append(page.extract_text() or "")
+
+    return _normalize_text("\n".join(extracted))
+
+
+def _extract_with_pymupdf(pdf_path):
+    try:
+        fitz = importlib.import_module("fitz")
+        if hasattr(fitz, "TOOLS") and hasattr(fitz.TOOLS, "mupdf_display_errors"):
+            fitz.TOOLS.mupdf_display_errors(False)
+    except Exception:
+        return ""
+
+    extracted = []
+    with fitz.open(pdf_path) as doc:
+        for page in doc:
+            extracted.append(page.get_text("text") or "")
+    return _normalize_text("\n".join(extracted))
+
+
+def _extract_with_ocr(pdf_path):
+    """
+    Optional OCR fallback for scanned/image-only PDFs.
+    Requires PyMuPDF + pytesseract + system tesseract binary.
+    """
+    try:
+        fitz = importlib.import_module("fitz")
+        if hasattr(fitz, "TOOLS") and hasattr(fitz.TOOLS, "mupdf_display_errors"):
+            fitz.TOOLS.mupdf_display_errors(False)
+        pytesseract = importlib.import_module("pytesseract")
+        from PIL import Image
+    except Exception:
+        return ""
+
+    extracted = []
+    max_pages = int(os.getenv("OCR_MAX_PAGES", "30"))
+    zoom = float(os.getenv("OCR_ZOOM", "2.0"))
+    matrix = fitz.Matrix(zoom, zoom)
+
+    try:
+        with fitz.open(pdf_path) as doc:
+            for i, page in enumerate(doc):
+                if i >= max_pages:
+                    break
+                pix = page.get_pixmap(matrix=matrix)
+                mode = "RGB" if pix.alpha == 0 else "RGBA"
+                image = Image.frombytes(mode, [pix.width, pix.height], pix.samples)
+                extracted.append(pytesseract.image_to_string(image) or "")
+    except Exception:
+        return ""
+
+    return _normalize_text("\n".join(extracted))
 
 def load_pdfs(folder_path):
     """Load PDFs from folder. Falls back to mock cosmetics data if no PDFs found."""
@@ -21,11 +142,41 @@ def load_pdfs(folder_path):
     for pdf_path in pdf_files:
         text = ""
         try:
-            with open(pdf_path, "rb") as f:
-                reader = PyPDF2.PdfReader(f)
-                for page in reader.pages:
-                    text += page.extract_text() + "\n"
-            documents.append({"file": pdf_path.name, "text": text})
+            password = os.getenv("PDF_PASSWORD", "")
+
+            # Primary extraction via PyPDF2.
+            text = _extract_with_pypdf2(pdf_path, password=password)
+
+            # Secondary extraction via pypdf for PDFs that PyPDF2 cannot parse well.
+            if len(text.split()) < 20:
+                pypdf_text = _extract_with_pypdf(pdf_path, password=password)
+                if len(pypdf_text.split()) > len(text.split()):
+                    text = pypdf_text
+
+            # Fallback extraction for PDFs where PyPDF2 returns near-empty content.
+            if len(text.split()) < 20:
+                alt_text = _extract_with_pymupdf(pdf_path)
+                if len(alt_text.split()) > len(text.split()):
+                    text = alt_text
+
+            # OCR fallback for scanned/image-only files.
+            if len(text.split()) == 0:
+                ocr_text = _extract_with_ocr(pdf_path)
+                if len(ocr_text.split()) > 0:
+                    text = ocr_text
+
+            word_count = len(text.split())
+            if word_count == 0:
+                print(
+                    f"Warning: {pdf_path.name} produced no extractable text. "
+                    "Likely scanned/image-only; OCR is required."
+                )
+
+            documents.append({
+                "file": pdf_path.name,
+                "text": text,
+                "word_count": word_count,
+            })
         except Exception as e:
             print(f"Error reading {pdf_path.name}: {e}. Skipping.")
 
