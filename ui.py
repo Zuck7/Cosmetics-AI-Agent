@@ -33,20 +33,24 @@ _cache_decorator = st.cache_resource if _HAVE_STREAMLIT and hasattr(st, "cache_r
 
 
 @_cache_decorator
-def init_system(data_path: str = "data/cosmetics") -> Tuple:
+def init_system(
+    data_path: str = "data/cosmetics",
+    cosing_csv_path: str = "data/cosing/COSING_Ingredients-Fragrance.Inventory_v2.csv",
+) -> Tuple:
     """Initialize documents, vector store, RAG system, summarizer and planner.
 
     This is cached by Streamlit so initialization is done only once per session.
     """
     # Import components lazily so module import doesn't require heavy deps
     from rag.pdf_loader import load_pdfs
+    from rag.cosing_loader import load_cosing
     from rag.vector_store import VectorStore
     from rag.rag_system import RAGSystem
     from summarization_agent.sum_agent import SummarizationAgent
     from planner_agent.planner import PlannerAgent
 
-    # Load documents
-    docs = load_pdfs(data_path)
+    # Load documents: PDFs plus the open EU CosIng ingredient database
+    docs = load_pdfs(data_path) + load_cosing(cosing_csv_path)
 
     # Build vector store
     store = VectorStore()

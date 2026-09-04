@@ -84,12 +84,15 @@ Cosmetics-AI-Agent/
 ├── README.md                  # This file
 │
 ├── data/
-│   └── cosmetics/            # PDF knowledge base
-│       └── paper_beaty_pred.pdf
+│   ├── cosmetics/            # PDF knowledge base
+│   │   └── paper_beaty_pred.pdf
+│   └── cosing/               # EU CosIng open ingredient database (~24k ingredients)
+│       └── COSING_Ingredients-Fragrance.Inventory_v2.csv
 │
 ├── rag/                      # RAG System
 │   ├── __init__.py
 │   ├── pdf_loader.py        # PDF document loading
+│   ├── cosing_loader.py     # CosIng ingredient CSV loading
 │   ├── vector_store.py      # FAISS vector storage
 │   └── rag_system.py        # Retrieval logic
 │
@@ -168,7 +171,7 @@ The system returns structured responses:
 planner = PlannerAgent(
     rag_system=rag,
     summarizer=summarizer,
-    model_name="llama-3.1-70b-versatile"  # Customizable model
+    model_name="openai/gpt-oss-120b"  # Customizable model (Groq-hosted)
 )
 ```
 
@@ -189,7 +192,7 @@ The Planner automatically determines optimal retrieval parameters through query 
 
 ## Technologies
 
-- **LLM Provider**: Groq (Llama 3.1 70B for Planner, Llama 3.1 8B for Summarization)
+- **LLM Provider**: Groq (openai/gpt-oss-120b for Planner, openai/gpt-oss-20b for Summarization)
 - **Vector Store**: FAISS
 - **Embeddings**: Sentence Transformers
 - **PDF Processing**: PyPDF2

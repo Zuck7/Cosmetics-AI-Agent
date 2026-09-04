@@ -25,7 +25,7 @@ class PlannerAgent:
     - Aggregating results into structured responses
     """
     
-    def __init__(self, rag_system, summarizer, model_name="llama-3.3-70b-versatile", groq_api_key=None):
+    def __init__(self, rag_system, summarizer, model_name="openai/gpt-oss-120b", groq_api_key=None):
         """
         Initialize the Planner Agent with worker agents.
         

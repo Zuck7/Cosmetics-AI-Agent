@@ -1,4 +1,5 @@
 from rag.pdf_loader import load_pdfs
+from rag.cosing_loader import load_cosing
 from rag.vector_store import VectorStore
 from rag.rag_system import RAGSystem
 from summarization_agent.sum_agent import SummarizationAgent
@@ -11,10 +12,12 @@ from planner_agent.planner import PlannerAgent
 print("Initializing Cosmetics AI Agent System...")
 print("=" * 60)
 
-# 1. Load documents from knowledge base
-print("\n[1/4] Loading PDF documents...")
-docs = load_pdfs("data/cosmetics")
-print(f"✓ Loaded {len(docs)} document(s)")
+# 1. Load documents from knowledge base: PDFs + the open EU CosIng ingredient database
+print("\n[1/4] Loading PDF documents and CosIng ingredient database...")
+pdf_docs = load_pdfs("data/cosmetics")
+cosing_docs = load_cosing("data/cosing/COSING_Ingredients-Fragrance.Inventory_v2.csv")
+docs = pdf_docs + cosing_docs
+print(f"✓ Loaded {len(pdf_docs)} PDF document(s) and {len(cosing_docs)} CosIng ingredient record(s)")
 
 # 2. Build vector store for RAG
 print("\n[2/4] Building vector store...")

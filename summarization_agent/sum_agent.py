@@ -2,7 +2,7 @@ from groq_config import get_groq_client, get_groq_api_key
 
 
 class SummarizationAgent:
-    def __init__(self, model_name="llama-3.1-8b-instant"):
+    def __init__(self, model_name="openai/gpt-oss-20b"):
         self.model_name = model_name
         self.client = get_groq_client()
 

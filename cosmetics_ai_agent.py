@@ -19,6 +19,8 @@ import json
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
+from rag.cosing_loader import load_cosing
+
 # --- PDF Loader ---
 def load_pdfs(folder_path):
     try:
@@ -368,8 +370,8 @@ class PlannerAgent:
 
 # --- Unified Agent Interface ---
 class CosmeticsAIAgent:
-    def __init__(self, data_path="data/cosmetics"):
-        docs = load_pdfs(data_path)
+    def __init__(self, data_path="data/cosmetics", cosing_csv_path="data/cosing/COSING_Ingredients-Fragrance.Inventory_v2.csv"):
+        docs = load_pdfs(data_path) + load_cosing(cosing_csv_path)
         store = VectorStore()
         store.build(docs)
         rag = RAGSystem(store)
